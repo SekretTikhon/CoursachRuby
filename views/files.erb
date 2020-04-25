@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+
+  <style>
+    ul {
+      #list-style-type: none;
+      #margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background-color: #333333;
+    }
+
+    a {
+      #display: block;
+      #color: blue;
+      #text-align: center;
+      #padding: 16px;
+      text-decoration: none;
+    }
+
+    a:hover {
+      <!--background-color: #111111;-->
+    }
+
+    table {
+      list-style-type: none;
+      #margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background-color: #333333;
+    }
+  </style>
+</head>
+<body>
+
+<html>
+    <body>
+        <h2>
+          <% @fullpath_map.each do |elem| %>
+            <a style="color: black; text-decoration: none" href= <%= elem[:href] %> ><%= elem[:name] %></a>
+          <% end %>
+          <!--<%= @fullpath %>-->
+        </h2>
+        <table style="color: white; width: 600px;border:0px;">
+          <tr>
+            <th style="width: 450px; text-align: left">name</th>
+            <th style="width: 150px; text-align: left">last changes</th>
+            <th style="width: 25px"></th>
+          </tr>
+          
+          <% @directoryes.each do |dir| %>
+          <tr>
+            <td> <a style="color: steelblue; text-decoration: none" href=<%= dir[:href] %>> <%= dir[:name] %> </a> </td>
+            <td><%= dir[:changes] %></td>
+            <td> <input class="js-file" type="checkbox" data-file="<%= dir[:path] %>"> </td>
+          </tr>
+          <% end %>
+
+          <% @files.each do |file| %>
+          <tr>
+            <td><a style="color: white; text-decoration: none;" href=<%= file[:href] %>><%= file[:name] %></a></td>
+            <td><%= file[:changes] %></td>
+            <td> <input class="js-file" type="checkbox" data-file="<%= file[:path] %>"> </td>
+          </tr>
+          <% end %>
+        </table>
+        <a class="js-download" href="">Download files</a><br>
+        <a href="/upload">Upload file</a>
+    </body>
+
+    <script type="text/javascript">
+      $(document).ready(function(){
+        $('.js-download').click(function(event) {
+          event.preventDefault();
+
+          let params = [];
+
+          $('.js-file:checked').each(function(index) {
+            params.push($(this).data('file'));
+          });
+
+          if (params.length > 0) {
+            window.open('/download?filenames=' + params.join(','), '_self');
+          } else {
+            alert('No files selected');
+          }
+        });
+      });
+    </script>
+</html>
+
+    
