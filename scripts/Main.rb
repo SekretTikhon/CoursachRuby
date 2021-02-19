@@ -1,21 +1,28 @@
 require "tempfile"
 require "sinatra"
 require "erb"
-require "./ZipGenerator"
+require "sqlite3"
+require "./ZipGenerator.rb"
 
 enable :sessions
-set :root, './'
-set :views, './views'
+set :root, '..'
+set :views, '../views'
+set :no_auth_neededs, ['/login']
+
+set :db_codes_db_path, '../db/base.db'
+set :db_codes_table_name, 'Codes'
+set :db_codes_select_columns, 'user, code, generated, valid_until, already_used'
+set :db_codes_indexof_user, 0
+set :db_codes_indexof_code, 1
+set :db_codes_indexof_generated, 2
+set :db_codes_indexof_valid_until, 3
+set :db_codes_indexof_already_used, 4
+
+TimeFormat = '%H:%M %d/%m/%y'
 
 cur_path = nil
-#listfiles = nil
-#home_path = '/home/tikhon/'
-TimeFormat = "%H:%M %d/%m/%y"
-info = nil
 
-configure do
-  set :no_auth_neededs, ['/login']
-end
+info = nil
 
 before do
   redirect to ('/login') unless
@@ -24,6 +31,7 @@ before do
 end
 
 get '/' do
+  ###@login = session['login']
   erb :index
 end
 
@@ -31,29 +39,31 @@ get '/login' do
   erb :login if are_login
 
   params = request.env['rack.request.query_hash']
-  key = params["key"]
-  login_with_key key
+  code = params["code"]
+  login_with_code code
 
   erb :login
-end
-
-get '/error' do
-  halt 401, 'go away!'
+  ###redirect to ('/') if are_login
+  ###params = request.env['rack.request.query_hash']
+  ###code = params["code"]
+  ###if code == nil
+  ###  erb :login
+  ###else
+  ###  login_with_code code
+  ###  redirect to ('/') if are_login
+  ###  erb :login
+  ###end
 end
 
 get '/fs' do
+  ###check_login
   cur_path = session['homepath'] #home_path
   redirect to ('/fs' + cur_path)
 end
 
 get '/fs*' do
+  ###check_login
   param = params['splat'][0]
-
-  #puts '--------------------------'
-  #puts "path:      \t" + param
-  #puts "Exist:     \t" + File.exist?(param).to_s
-  #puts "file?:     \t" + File.file?(param).to_s
-  #puts "directory?:\t" + File.directory?(param).to_s
 
   if !File.exist?(param)
     puts 'path ' + param + ' not exists!'
@@ -68,7 +78,7 @@ get '/fs*' do
 
     command = "sudo -u " + @user + " ls -a " + @fullpath
 
-    # $?.exitstatus || popen
+    ## $?.exitstatus || popen
 
     #перенаправление если нет прав
     redirect to ('/fs' + cur_path) if !system(command) # если не получилось то значит нет прав (наверно)
@@ -103,6 +113,20 @@ post '/upload' do
   upload_file
 
   redirect to ('/fs' + cur_path)
+end
+
+get '/cat' do
+  send_file 'cat.jpeg'
+end
+
+get '/fs/back' do
+  check_login
+  Dir.chdir('..')
+  redirect to ('/fs' + cur_path)
+end
+
+get '/error' do
+  halt 401, 'go away!'
 end
 
 def get_dirs_files (path, list)
@@ -162,20 +186,56 @@ def are_login
   session['login']
 end
 
-def login_with_key key
-  if key == 'key' # проверка ключа
-    session['key'] = key
-    session['login'] = true
-    session['user'] = 'sekret-tikhon'
-    session['homepath'] = '/home/' + session['user'] + '/'
-  elsif key == 'user1key'
-    session['key'] = key
-    session['login'] = true
-    session['user'] = 'user1'
-    session['homepath'] = '/home/' + session['user'] + '/'
+def db_execute comand
+  db = SQLite3::Database.open settings.db_codes_db_path
+  res = db.execute comand
+  db.close if db
+  return res
+end
+
+def login_with_code code
+  #request to db
+  row = db_execute "
+    SELECT #{settings.db_codes_select_columns}
+    FROM #{settings.db_codes_table_name}
+    WHERE code = '#{code}'"
+
+  #check that code found
+  if row == []
+    @error = "the code not found"
+    return
   end
+  row = row[-1] #becase res is array of rows
+
+  #check that the code already never used
+  already_used = row[settings.db_codes_indexof_already_used]
+  if already_used != 0
+    @error = "the code already used"
+    return
+  end
+
+  #check that the code not expired
+  valid_until = row[settings.db_codes_indexof_valid_until]
+  now_timestamp = `date +%s`.to_i
+  if valid_until <= now_timestamp
+    @error = "the code expired"
+    return
+  end
+
+  #if we are here, then the code is valid and not expired
+  session['user'] = row[settings.db_codes_indexof_user]
+  session['code'] = row[settings.db_codes_indexof_code]
+  session['homepath'] = (`getent passwd #{session['user']}`).split(":")[5]
+  session['login'] = true
+
+  #update
+  db_execute "
+    UPDATE #{settings.db_codes_table_name}
+    SET 'already_used' = 1
+    WHERE code = '#{code}'"
+
 end
 
 def check_login
-  redirect to ('/login') if !are_login
+  redirect to ('/') if !are_login
 end
