@@ -2,14 +2,14 @@ require "tempfile"
 require "sinatra"
 require "erb"
 require "sqlite3"
-require "./ZipGenerator.rb"
+require "./scripts/ZipGenerator.rb"
 
 enable :sessions
-set :root, '..'
-set :views, '../views'
+set :root, '.'
+set :views, './views'
 set :no_auth_neededs, ['/login']
 
-set :db_codes_db_path, '../db/base.db'
+set :db_codes_db_path, './db/base.db'
 set :db_codes_table_name, 'Codes'
 set :db_codes_select_columns, 'user, code, generated, valid_until, already_used'
 set :db_codes_indexof_user, 0

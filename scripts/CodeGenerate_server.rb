@@ -6,7 +6,7 @@ require 'socket'
 include Socket::Constants
 
 @code_valid_time = 24*60*60 #1 day
-@db_codes_db_path = '../db/base.db'
+@db_codes_db_path = './db/base.db'
 @db_codes_table_name = 'Codes'
 
 def insert_row row
@@ -41,7 +41,7 @@ while true
   print "Insert row to db..."
   generated = `date +%s`.to_i
   valid_until = generated + @code_valid_time
-  row = "('%s', '%s', %d, %d, %d)" % [user, code, generated, valid_until, 0]
+  row = "('#{user}', '#{code}', #{generated}, #{valid_until}, 0)"
   insert_row row
   print " Done.\n"
 
