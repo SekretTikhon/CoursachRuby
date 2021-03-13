@@ -1,0 +1,15 @@
+db:
+  path: ./db/base.db
+  table:
+    name: codes
+    columns:
+      - name: user
+        type: TEXT
+      - name: code
+        type: TEXT
+      - name: generated
+        type: INTEGER
+      - name: valid_until
+        type: INTEGER
+      - name: already_used
+        type: INTEGER

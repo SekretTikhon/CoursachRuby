@@ -1,40 +1,35 @@
 #!/usr/bin/ruby
 
 require 'sqlite3'
-
-@table_name = 'Codes'
-
-def insert_row row
-	@db.execute "INSERT INTO #{@table_name} VALUES #{row}"
-end
+require 'config'
 
 def create_table
-	@db.execute "
-		CREATE TABLE IF NOT EXISTS #{@table_name}(
-			user TEXT,
-			code TEXT,
-			generated INTEGER,
-			valid_until INTEGER,
-			already_used INTEGER
-		)"
+	columns = []
+	Settings.db.table.columns.each do |elem|
+		columns << "#{elem.name} #{elem.type}"
+	end
+	@db.execute "CREATE TABLE IF NOT EXISTS #{Settings.db.table.name}(#{columns.join(", ")})"
 end
 
 if ARGV.length == 1
-	@db_path = ARGV[0]
+	config_path = ARGV[0]
+	Config.load_and_set_settings(config_path)
 
-	SQLite3::Database.new @db_path
-	@db = SQLite3::Database.open @db_path
-	
-	create_table
-	
-	insert_row "('tikhon', 'key', 1, 9223372036854775807, 0)"
-	insert_row "('user1', 'user1key', 1, 9223372036854775807, 0)"
+	@db_path = Settings.db.path
+	if !File.exist?(@db_path)
+		SQLite3::Database.new @db_path
+		@db = SQLite3::Database.open @db_path
+		
+		create_table
+		
+		@db.close if @db
+		puts "Database succesfully created."
+	else
+		puts 'Database already exists.'
+	end
 
-	@db.close if @db
-	puts "Success!"
-
-elsif
-	puts "need 1 arg: db_path"
+else
+	puts "Need 1 arg: path to config"
 end
 
 
