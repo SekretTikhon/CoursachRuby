@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 
-WEB_SERVER_PID=/tmp/remote_service_server.pid
+WEB_SERVER_PID=/tmp/remote_service_web_server.pid
 
 check_before_start(){
     if [ -f $WEB_SERVER_PID ]; then
-        if kill -0 `cat $WEB_SERVER_PID` > /dev/null 2>&1; then
-            echo Server already running with pid `cat $WEB_SERVER_PID`
+        pid_that_running=`cat $WEB_SERVER_PID`
+        if kill -0 $pid_that_running > /dev/null 2>&1; then
+            echo "Server already running with pid $pid_that_running"
             exit 1
         fi
     fi
@@ -43,10 +44,10 @@ case $startStop in
             kill $pid_to_kill > /dev/null 2>&1
             echo "Server stoped (pid=$pid_to_kill)"
         else
-            echo "Cannot stop, becase server (pid=${pid_to_kill}) not running"
+            echo "Server cannot stop, becase server (pid=${pid_to_kill}) not running"
         fi
     else
-        echo "Cannot stop, becase pid file ($WEB_SERVER_PID) does not exist"
+        echo "Server cannot stop, becase pid file ($WEB_SERVER_PID) does not exist"
     fi
     ;;
 
