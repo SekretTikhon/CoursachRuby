@@ -16,7 +16,7 @@ check_that_database_created(){
     ./scripts/CreateDB.rb ./config/settings.yml
 }
 
-usage="Usage: kekeke"
+usage="Usage: need 1 parameter - start/stop"
 
 if [ $# -le 0 ]; then
     echo $usage

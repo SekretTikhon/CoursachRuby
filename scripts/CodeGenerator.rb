@@ -8,6 +8,8 @@ include Socket::Constants
 @code_valid_time = 24*60*60 #1 day
 @db_codes_db_path = './db/base.db'
 @db_codes_table_name = 'Codes'
+@socket_addr = "\0code-generator-socket"
+@url = "http://localhost:8147"
 
 def insert_row row
 	db = SQLite3::Database.open @db_codes_db_path
@@ -17,7 +19,7 @@ def insert_row row
 end
 
 print "Open UNIXServer..."
-server = UNIXServer.open("\0(take code socket)")
+server = UNIXServer.open(@socket_addr)
 print "Done\n"
 
 while true
@@ -46,7 +48,7 @@ while true
   print " Done.\n"
 
   print "Send code to client.\n"
-  sock.send code, 0
+  sock.send "#{@url}\n#{code}", 0
   print "End of connection.\n"
 
 end

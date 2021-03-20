@@ -200,7 +200,7 @@ def login_with_code code
 
   #check that code found
   if row == []
-    @error = "This code not found!"
+    flash[:warning] = "This code not found!"
     return
   end
   row = row[-1] #becase res is array of rows
@@ -208,7 +208,7 @@ def login_with_code code
   #check that the code already never used
   already_used = row[settings.db_codes_columns.index('already_used')]
   if already_used != 0
-    @error = "This code already used!"
+    flash[:warning] = "This code already used!"
     return
   end
 
@@ -216,7 +216,7 @@ def login_with_code code
   valid_until = row[settings.db_codes_columns.index('valid_until')]
   now_timestamp = `date +%s`.to_i
   if valid_until <= now_timestamp
-    @error = "This code expired!"
+    flash[:warning] = "This code expired!"
     return
   end
 
@@ -231,6 +231,8 @@ def login_with_code code
     UPDATE #{Settings.db.table.name}
     SET 'already_used' = 1
     WHERE code = '#{code}'"
+  
+  flash[:success] = "Sign in success."
 
 end
 
