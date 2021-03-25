@@ -2,3 +2,4 @@
 tmp/
 Gemfile.lock
 nohup.out
+db/base.db

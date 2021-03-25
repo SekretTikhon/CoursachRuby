@@ -13,7 +13,7 @@ check_before_start(){
 }
 
 check_that_database_created(){
-    ./scripts/CreateDB.rb ./config/settings.yml
+    bundle exec ruby ./scripts/CreateDB.rb ./config/settings.yml
 }
 
 usage="Usage: need 1 parameter - start/stop"
@@ -32,7 +32,7 @@ case $startStop in
     #todo logs to file
     check_before_start
     check_that_database_created
-    nohup rackup -p 8147 &
+    nohup bundle exec rackup -p 8147 &
     pid=$!
     echo $pid > ${WEB_SERVER_PID}
     ;;
