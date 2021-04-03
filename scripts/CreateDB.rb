@@ -17,6 +17,10 @@ if ARGV.length == 1
 
 	@db_path = Settings.db.path
 	if !File.exist?(@db_path)
+		db_dir = Pathname.new(@db_path).dirname
+		if !File.exist?(db_dir)
+			Dir.mkdir(db_dir)
+		end
 		SQLite3::Database.new @db_path
 		@db = SQLite3::Database.open @db_path
 		

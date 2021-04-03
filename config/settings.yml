@@ -1,3 +1,11 @@
+base_url: http://localhost:8147
+
+code:
+  valid_time: 86400
+
+socket:
+  addr: 0code-generator-socket
+
 db:
   path: ./db/base.db
   table:
