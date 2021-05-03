@@ -127,43 +127,23 @@ post '/bash' do
   logger.debug "params: #{params}"
 
   #get command for execute
-  command_label = params["select_command"]
-  if command_label == "custom"
-    command = params["text_command"]
-  else
-    command = settings.bash_default_commands[command_label]
-  end
+  command = params["text_command"]
 
   #execute command
   Open3.popen3("sudo -u #{session['user']} #{command}") {|stdin, stdout, stderr, wait_thr|
-    #pid = wait_thr.pid
-    @status = "Process"
-
     begin
       Timeout.timeout(Settings.bash.timeout) do
-        #logger
         exit_status = wait_thr.value # or maybe Process.wait(pid)
-        @status += exit_status.success? ? " ended successfully." : " failed."
+        @status = exit_status.success? ? "Command ended successfully." : "Command failed."
       end
     rescue Timeout::Error
-      # logger
-      Process.kill('TERM', wait_thr.pid) # or maybe Process.kill(9, pid)
-      @status += " timed out."
+      Process.kill('TERM', wait_thr.pid)
+      @status = "Command timed out."
     end
 
-    #where this needed??
-    @stdout = stdout.read
-    @stderr = stderr.read
-
+    @stdout = read_unclosed_stream stdout
+    @stderr = read_unclosed_stream stderr
   }
-
-  #Timeout.timeout(Settings.bash.timeout) do
-  #  @result = %x(sudo -u #{session['user']} #{command} 2>&1)
-  #  #@result = `sudo -u #{session['user']} #{command}`
-  #  #@result = system("sudo -u #{session['user']} #{command}")
-  #  logger.debug @result
-  #  puts @result
-  #end
 
   @commands = Settings.bash.default_commands
   erb :bash
@@ -177,6 +157,20 @@ end
 get '/error' do
   logger.debug "'get /error''"
   halt 401, 'go away!'
+end
+
+def read_unclosed_stream stream
+  result = ""
+  while true do
+    begin
+      Timeout.timeout(1) do
+        result << stream.readline
+      end
+    rescue
+      break
+    end
+  end
+  return result
 end
 
 def redirect_to_cur_path 
