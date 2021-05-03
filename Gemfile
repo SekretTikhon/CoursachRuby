@@ -13,3 +13,6 @@ gem 'logger'
 gem 'rubyzip'
 gem 'config'
 gem 'sinatra-flash'
+gem 'timeout'
+gem 'open3'
+gem "webrick", "~> 1.7"

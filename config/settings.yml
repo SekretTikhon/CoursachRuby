@@ -21,3 +21,13 @@ db:
         type: INTEGER
       - name: already_used
         type: INTEGER
+
+bash:
+  timeout: 5
+  default_commands:
+    - label: meow
+      name: Meow
+      command: echo "Meow!"
+    - label: bark
+      name: Bark
+      command: echo "Bark!"

@@ -1,0 +1,43 @@
+<html>
+    <script>
+        function changeSelectCommand() {
+            let command = document.getElementById("select_command_id").value
+            if (command == "custom") {
+                document.getElementById("text_command_id").value = ""
+                document.getElementById("text_command_id").disabled = 0
+            } else {
+                document.getElementById("text_command_id").value = command
+                document.getElementById("text_command_id").disabled = 1
+            }
+        }
+    </script>
+    <body onload="changeSelectCommand()">
+        <h3>Please, chose or write a command</h3>
+        <form method="post" enctype="multipart/form-data">
+            Chose:
+                <select name="select_command" onchange="changeSelectCommand()" id="select_command_id">
+                    <option selected value="custom">Custom</option>
+                    <% @commands.each do |command| %>
+                        <option value=<%= command.label %>><%= command.name %></option>
+                    <% end %>
+                </select><br>
+            Command: <input type="text" name="text_command" id="text_command_id"><br>
+            <input type="submit" value="Execute"/>
+        </form>
+        
+        <% if !@status.to_s.empty? %>
+        <h4><%= @status %></h4>
+        <% end %>
+
+        <% if !@stderr.to_s.empty? %>
+        <h5>stderr:</h5>
+        <output name="stderr"><%= @stderr %></output>
+        <% end %>
+
+        <% if !@stdout.to_s.empty? %>
+        <h5>stdout:</h5>
+        <output name="stdout"><%= @stdout %></output>
+        <% end %>
+
+    </body>
+</html>

@@ -4,8 +4,15 @@
 #require 'sqlite3'
 #require 'pathname'
 #require 'logger'
+#require 'timeout'
+#require 'open3'
 
 configure do
+  # dont work!(
+  # DEBUG < INFO < WARN < ERROR < FATAL < UNKNOWN
+  # logger.level = Logger::DEBUG
+
+
   enable :sessions
   register Config
 
@@ -14,6 +21,10 @@ configure do
   set :views, "#{settings.root}/views"
   set :no_auth_neededs, ['/login']
   set :db_codes_columns, Settings.db.table.columns.map { |column| column.name }
+  set :bash_default_commands, {}
+  Settings.bash.default_commands.each do |elem|
+    settings.bash_default_commands[elem.label] = elem.command
+  end
 
   require "#{settings.root}/scripts/ZipGenerator.rb"
 
@@ -26,18 +37,14 @@ before do
     settings.no_auth_neededs.include?(request.path_info)
 end
 
-get '/' do
+get '/home' do
   erb :index
 end
 
 get '/login' do
-  erb :login if are_login
-
-  params = request.env['rack.request.query_hash']
   code = params['code']
   logger.debug "'get /login' with code '#{code}'"
   login_with_code code
-
   erb :login
 end
 
@@ -106,6 +113,60 @@ post '/upload' do
   upload_file
 
   redirect_to_cur_path
+end
+
+get '/bash' do
+  logger.debug "'get /bash''"
+  @commands = Settings.bash.default_commands
+
+  erb :bash
+end
+
+post '/bash' do
+  logger.debug "'post /bash''"
+  logger.debug "params: #{params}"
+
+  #get command for execute
+  command_label = params["select_command"]
+  if command_label == "custom"
+    command = params["text_command"]
+  else
+    command = settings.bash_default_commands[command_label]
+  end
+
+  #execute command
+  Open3.popen3("sudo -u #{session['user']} #{command}") {|stdin, stdout, stderr, wait_thr|
+    #pid = wait_thr.pid
+    @status = "Process"
+
+    begin
+      Timeout.timeout(Settings.bash.timeout) do
+        #logger
+        exit_status = wait_thr.value # or maybe Process.wait(pid)
+        @status += exit_status.success? ? " ended successfully." : " failed."
+      end
+    rescue Timeout::Error
+      # logger
+      Process.kill('TERM', wait_thr.pid) # or maybe Process.kill(9, pid)
+      @status += " timed out."
+    end
+
+    #where this needed??
+    @stdout = stdout.read
+    @stderr = stderr.read
+
+  }
+
+  #Timeout.timeout(Settings.bash.timeout) do
+  #  @result = %x(sudo -u #{session['user']} #{command} 2>&1)
+  #  #@result = `sudo -u #{session['user']} #{command}`
+  #  #@result = system("sudo -u #{session['user']} #{command}")
+  #  logger.debug @result
+  #  puts @result
+  #end
+
+  @commands = Settings.bash.default_commands
+  erb :bash
 end
 
 get '/cat' do
